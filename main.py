@@ -1,8 +1,14 @@
+from idlelib import statusbar
+
+from PyQt6.QtStateMachine import QState
 from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton,
-                             QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox)
+                             QMainWindow, QMessageBox, QTableWidget, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox,
+                             QToolBar, QStatusBar)
 import sys
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QIcon
 import sqlite3
+
+from PyQt6.sip import delete
 
 
 class MainWindow(QMainWindow):
@@ -13,18 +19,54 @@ class MainWindow(QMainWindow):
         file_menu = self.menuBar().addMenu("&File")
         help_about_menu = self.menuBar().addMenu("&Help")
 
-        add_student_action = QAction("Add Student", self)
+        add_student_action = QAction(QIcon("icons/add.png"),"Add Student", self)
         add_student_action.triggered.connect(self.insert)
         file_menu.addAction(add_student_action)
 
         about_action = QAction("About", self)
         file_menu.addAction(about_action)
 
+        search_action = QAction(QIcon("icons/search.png"),"Search", self)
+        file_menu.addAction(search_action)
+        search_action.triggered.connect(self.load_data)
+
+
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(("Id", "Name", "Course", "Mobile"))
         self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
+
+        # create the toolbar and the toolbar elements
+        toolbar = QToolBar()
+        toolbar.setMovable(True)
+        self.addToolBar(toolbar)
+        toolbar.addAction(add_student_action)
+        toolbar.addAction(search_action)
+
+        # create the status bar and status bar elements
+        statusbar = QStatusBar()
+        self.setStatusBar(statusbar)
+
+    #     detect a click
+
+        self.table.cellClicked.connect(self.cell_clicked)
+
+    def cell_clicked(self):
+        edit_button = QPushButton("Edit Student")
+        edit_button.clicked.connect(self.edit)
+
+        delete_button = QPushButton("Delete Student")
+        delete_button.clicked.connect(self.delete)
+
+        children = self.findChildren(QPushButton)
+        if children:
+            for child in children:
+                self.statusBar().removeWidget(child)
+
+
+        self.statusBar.addWidget(edit_button)
+        self.statusBar.addWidget(delete_button)
 
 
     def load_data(self):
@@ -41,6 +83,28 @@ class MainWindow(QMainWindow):
     def insert(self):
         dialog = InsertDialog()
         dialog.exec()
+
+    def search(self):
+        dialog = SearchDialog()
+        dialog.exec()
+
+    def edit(self):
+        dialog = EditDialog()
+        dialog.exec()
+
+
+    def delete(self):
+        dialog = DeleteDialog()
+        dialog.exec()
+
+
+class EditDialog(QDialog):
+    pass
+
+
+class DeleteDialog(QDialog):
+    pass
+
 
 class InsertDialog(QDialog):
     def __init__(self):
